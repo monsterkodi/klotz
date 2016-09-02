@@ -69,7 +69,7 @@ class World extends Actor
         @sun = new THREE.PointLight 0xffffff
         @scene.add @sun
         
-        @ambient = new THREE.AmbientLight 0x222222
+        @ambient = new THREE.AmbientLight 0 #0x111111
         @scene.add @ambient
         
         @objects = []
@@ -98,6 +98,10 @@ class World extends Actor
     create: (@dict={}) -> 
         
         block = new Block
+        block = new Block
+        block.mesh.translateX 1
+        block = new Block
+        block.mesh.translateX -1
         
         @applyScheme @dict.scheme ? 'default'
         # @text = new ScreenText 'klotz'
@@ -119,15 +123,15 @@ class World extends Actor
             plate:  10
             raster: 20
             wall:   20
-            block1:  30
-            block2:  30
-            block3:  30
+            block1:  10
+            block2:  10
+            block3:  10
             text:   200
             
         for k,v of colors
             mat = Material[k]
             mat.color    = v.color
-            mat.specular = v.specular ? new THREE.Color(v.color).multiplyScalar 0.2
+            # mat.specular = v.specular ? new THREE.Color(v.color).multiplyScalar 0.2
             # mat.emissive = v.emissive ? new THREE.Color 0,0,0
             if shininess[k]?
                 mat.shininess = v.shininess ? shininess[k]

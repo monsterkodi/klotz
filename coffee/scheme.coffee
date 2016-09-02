@@ -23,9 +23,9 @@ module.exports =
         block1:            
             color:  rgb 1,0,0
         block2:            
-            color:  rgb 0,1,0
+            color:  rgb 0.3,0.3,1
         block3:            
-            color:  rgb 0,0,1
+            color:  rgb 0.5,0.5,0.5
         text:             
             color:  rgb 0.8, 0.8, 0
     
