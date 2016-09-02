@@ -12,7 +12,7 @@ Quaternion = require './lib/quaternion'
 class Item
 
     constructor: ->
-        @name = @constructor.name
+        @name = @constructor.name if not @name?
         @createMesh?()
         world.scene.add @mesh if @mesh?
         @position         = new Vector

@@ -7,6 +7,7 @@
 {
 absMin,
 randInt,
+deg2rad,
 clamp,
 first,
 last}       = require './lib/tools'
@@ -69,12 +70,37 @@ class World extends Actor
         @sun = new THREE.PointLight 0xffffff
         @scene.add @sun
         
-        @ambient = new THREE.AmbientLight 0 #0x111111
+        @ambient = new THREE.AmbientLight 0x222222
         @scene.add @ambient
         
         @objects = []
         @lights  = []
      
+        @view.addEventListener 'mousedown',  @onMouseDown
+    
+    # 00     00   0000000   000   000   0000000  00000000
+    # 000   000  000   000  000   000  000       000     
+    # 000000000  000   000  000   000  0000000   0000000 
+    # 000 0 000  000   000  000   000       000  000     
+    # 000   000   0000000    0000000   0000000   00000000
+    
+    onMouseDown: (event) =>
+        br = @view.getBoundingClientRect()
+        x = event.clientX - br.left
+        y = event.clientY - br.top
+        mouse = new THREE.Vector2 2*(x/@view.clientWidth)-1, -(2*(y/@view.clientHeight)-1)
+        raycaster = new THREE.Raycaster
+        raycaster.setFromCamera mouse, @camera.cam
+    
+        hit = raycaster.intersectObjects @scene.children, true
+        log first(hit).object.name
+        
+    # 000  000   000  000  000000000
+    # 000  0000  000  000     000   
+    # 000  000 0 000  000     000   
+    # 000  000  0000  000     000   
+    # 000  000   000  000     000   
+        
     @init: (view) ->
         return if world?
         @initGlobal()
@@ -98,13 +124,13 @@ class World extends Actor
     create: (@dict={}) -> 
         
         block = new Block
+        block.mesh.rotateZ deg2rad 180
         block = new Block
         block.mesh.translateX 1
         block = new Block
         block.mesh.translateX -1
         
         @applyScheme @dict.scheme ? 'default'
-        # @text = new ScreenText 'klotz'
     
     restart: => @create @dict
 
@@ -120,19 +146,20 @@ class World extends Actor
         colors = _.clone Scheme[scheme]
         
         shininess = 
-            plate:  10
-            raster: 20
-            wall:   20
+            plate:   10
+            raster:  20
+            wall:    20
             block1:  10
             block2:  10
             block3:  10
+            block4:  10
+            block5:  10
+            block6:  10
             text:   200
             
         for k,v of colors
             mat = Material[k]
             mat.color    = v.color
-            # mat.specular = v.specular ? new THREE.Color(v.color).multiplyScalar 0.2
-            # mat.emissive = v.emissive ? new THREE.Color 0,0,0
             if shininess[k]?
                 mat.shininess = v.shininess ? shininess[k]
 
@@ -168,14 +195,6 @@ class World extends Actor
 
     activate: (objectName) -> @getObjectWithName(objectName)?.setActive? true
     
-    decenter: (x,y,z) -> new Pos(x,y,z).plus @size.div 2
-
-    isValidPos: (pos) -> 
-        p = new Pos pos
-        p.x >= 0 and p.x < @size.x and p.y >= 0 and p.y < @size.y and p.z >= 0 and p.z < @size.z
-        
-    isInvalidPos: (pos) -> not @isValidPos pos
-
     #  0000000   0000000    0000000         0000000   0000000          000  00000000   0000000  000000000
     # 000   000  000   000  000   000      000   000  000   000        000  000       000          000   
     # 000000000  000   000  000   000      000   000  0000000          000  0000000   000          000   
@@ -266,7 +285,6 @@ class World extends Actor
         Sound.setMatrix @camera
             
         @sun.position.copy @camera.cam.position
-        # log "campos", @camera.cam.position
         @renderer.autoClearColor = false
         @renderer.render @scene, @camera.cam
         @renderer.render @text.scene, @text.camera if @text
@@ -311,32 +329,15 @@ class World extends Actor
         @screenSize = new Size w,h
         @text?.resized w,h
         @menu?.resized w,h
-    
-    isUnoccupiedPos: (pos) -> not @isOccupiedPos pos
-    isOccupiedPos:   (pos) ->        
-        if @isInvalidPos pos
-            return true
-        if @getOccupantAtPos pos
-            return true
-    
-    #   000   000  00000000  000      00000000 
-    #   000   000  000       000      000   000
-    #   000000000  0000000   000      00000000 
-    #   000   000  000       000      000      
-    #   000   000  00000000  0000000  000      
-    
-    showHelp: => @text = new ScreenText @dict['help']
-
+                
     # 00     00  00000000  000   000  000   000
     # 000   000  000       0000  000  000   000
     # 000000000  0000000   000 0 000  000   000
     # 000 0 000  000       000  0000  000   000
     # 000   000  00000000  000   000   0000000 
     
-   
     showMenu: (self) -> # handles an ESC key event
         @menu = new Menu()
-        @menu.addItem "help",       @showHelp
         @menu.addItem "restart",    @restart 
         @menu.addItem "load level", @showLevels
         @menu.addItem "about",      @showAbout

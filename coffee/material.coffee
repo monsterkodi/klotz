@@ -41,4 +41,16 @@ module.exports =
     block3: new THREE.MeshPhongMaterial 
         side:           THREE.FrontSide
         shading:        THREE.SmoothShading
+
+    block4: new THREE.MeshPhongMaterial 
+        side:           THREE.FrontSide
+        shading:        THREE.SmoothShading
+
+    block5: new THREE.MeshPhongMaterial 
+        side:           THREE.FrontSide
+        shading:        THREE.SmoothShading
+
+    block6: new THREE.MeshPhongMaterial 
+        side:           THREE.FrontSide
+        shading:        THREE.SmoothShading
     

@@ -13,19 +13,23 @@ Material = require './material'
 
 class Block extends Item
     
+    @id = 0
+    
     constructor: () ->
+        Block.id += 1
+        @name = "block_#{Block.id}"
         super
        
     createMesh: ->
         @mesh = new THREE.Object3D
-        @mesh.add @createSide Material.block1,   0, 0
-        @mesh.add @createSide Material.block1, 180, 0
-        @mesh.add @createSide Material.block2,  90, 0
-        @mesh.add @createSide Material.block2, -90, 0
-        @mesh.add @createSide Material.block3,  0, 90
-        @mesh.add @createSide Material.block3,  0,-90
+        @mesh.add @createSide Material.block1,   0, 0, "#{@name}_top"
+        @mesh.add @createSide Material.block2, 180, 0, "#{@name}_bot"
+        @mesh.add @createSide Material.block3,  90, 0, "#{@name}_front"
+        @mesh.add @createSide Material.block5, -90, 0, "#{@name}_back"
+        @mesh.add @createSide Material.block2,  0, 90, "#{@name}_left"
+        @mesh.add @createSide Material.block1,  0,-90, "#{@name}_right"
        
-    createSide: (mat, xr, yr) ->
+    createSide: (mat, xr, yr, name) ->
 
         faces     = 5
         triangles = faces * 2
@@ -70,6 +74,7 @@ class Block extends Item
         mesh = new THREE.Mesh geom, mat
         mesh.receiveShadow = true
         mesh.rotation.copy new THREE.Euler deg2rad(xr), deg2rad(yr), 0
+        mesh.name = name
         mesh
 
 module.exports = Block

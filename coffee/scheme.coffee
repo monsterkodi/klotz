@@ -20,13 +20,19 @@ module.exports =
             color:  rgb 0.5, 0, 0
         wall:
             color:  rgb 0.16, 0, 0
+        text:             
+            color:  rgb 0.8, 0.8, 0
         block1:            
             color:  rgb 1,0,0
         block2:            
-            color:  rgb 0.3,0.3,1
+            color:  rgb 0,0,1
         block3:            
-            color:  rgb 0.5,0.5,0.5
-        text:             
-            color:  rgb 0.8, 0.8, 0
+            color:  rgb 0,0.5,0
+        block4:            
+            color:  rgb 1,0,1
+        block5:            
+            color:  rgb 1,1,0
+        block6:            
+            color:  rgb 0,0.7,0.7
     
                              
