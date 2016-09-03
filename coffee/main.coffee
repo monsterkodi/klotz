@@ -1,15 +1,15 @@
 
-# 000   000  000  000   000  000
-# 000  000   000  000  000   000
-# 0000000    000  0000000    000
-# 000  000   000  000  000   000
-# 000   000  000  000   000  000
+# 000   000  000       0000000   000000000  0000000
+# 000  000   000      000   000     000        000 
+# 0000000    000      000   000     000       000  
+# 000  000   000      000   000     000      000   
+# 000   000  0000000   0000000      000     0000000
 
 Stage = require '/Users/kodi/s/ko/js/area/stage'
 log   = require '/Users/kodi/s/ko/js/tools/log'
 World = require './world'
 
-class Kiki extends Stage
+class Klotz extends Stage
     
     constructor: (@view) -> 
         super @view
@@ -52,4 +52,4 @@ class Kiki extends Stage
     modKeyComboEventDown: (mod, key, combo, event) -> world.modKeyComboEventDown mod, key, combo, event
     modKeyComboEventUp:   (mod, key, combo, event) -> world.modKeyComboEventUp   mod, key, combo, event
         
-module.exports = Kiki
+module.exports = Klotz

@@ -88,9 +88,9 @@ class ScreenText extends Actor
     performAction: (action) ->
         switch action.id
             when Action.SHOW
-                @setOpacity action.getRelativeTime()
+                @setOpacity action.relTime()
             when Action.HIDE
-                @setOpacity 1 - action.getRelativeTime()
+                @setOpacity 1 - action.relTime()
     
     actionFinished: (action) ->
         switch action.id

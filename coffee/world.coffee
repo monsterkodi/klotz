@@ -90,11 +90,10 @@ class World extends Actor
         y = event.clientY - br.top
         mouse = new THREE.Vector2 2*(x/@view.clientWidth)-1, -(2*(y/@view.clientHeight)-1)
         raycaster = new THREE.Raycaster
-        raycaster.setFromCamera mouse, @camera.cam
+        raycaster.setFromCamera mouse, @camera
         hit = raycaster.intersectObjects @scene.children, true
         if hit.length
             o = first(hit).object
-            log o
             block = @objectWithName o.parent.name
             block?.push o.name
         
@@ -126,13 +125,14 @@ class World extends Actor
         
     create: (@dict={}) -> 
         @deleteAllObjects()
+        @camera.reset()
         block = new Block
-        block.setOrientation Quaternion.ZupY
+        # block.setOrientation Quaternion.ZupY
         @addObjectAtPos block, 0,0,0
-        block = new Block
-        @addObjectAtPos block, 1,0,0
-        block = new Block
-        @addObjectAtPos block, -1,0,0
+        # block = new Block
+        # @addObjectAtPos block, 1,0,0
+        # block = new Block
+        # @addObjectAtPos block, -1,0,0
         
         @applyScheme @dict.scheme ? 'default'
     
@@ -275,11 +275,11 @@ class World extends Actor
         a.step step for k,a of @actions
         @lastStep = step
 
-        Sound.setMatrix @camera
+        Sound.setPosDirUp @camera.getPosition(), @camera.getDirection(), @camera.getUp()
             
-        @sun.position.copy @camera.cam.position
+        @sun.position.copy @camera.position
         @renderer.autoClearColor = false
-        @renderer.render @scene, @camera.cam
+        @renderer.render @scene, @camera
         @renderer.render @text.scene, @text.camera if @text
         @renderer.render @menu.scene, @menu.camera if @menu
         
@@ -315,9 +315,8 @@ class World extends Actor
     
     resized: (w,h) ->
         @aspect = w/h
-        camera = @camera.cam
-        camera?.aspect = @aspect
-        camera?.updateProjectionMatrix()
+        @camera?.aspect = @aspect
+        @camera?.updateProjectionMatrix()
         @renderer?.setSize w,h
         @screenSize = new Size w,h
         @text?.resized w,h

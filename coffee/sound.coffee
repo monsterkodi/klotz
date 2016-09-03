@@ -29,10 +29,7 @@ class Sound
                 distanceModel:      'exponential'
                 panningModel:       'HRTF'
     
-    @setMatrix: (m) -> 
-        p = m.getPosition()
-        f = m.getZVector()
-        u = m.getYVector()
+    @setPosDirUp: (p, f, u) -> 
         Howler.Howler.pos p.x, p.y, p.z
         Howler.Howler.orientation f.x, f.y, f.z, u.x, u.y, u.z
     

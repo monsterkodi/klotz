@@ -7,11 +7,10 @@
 {
 clamp
 }           = require './lib/tools'
-Matrix      = require './lib/matrix'
 Vector      = require './lib/vector'
 Quaternion  = require './lib/quaternion'
 
-class Camera extends Matrix
+class Camera extends THREE.PerspectiveCamera
 
     constructor: (opt) ->
         @fov    = opt?.fov    ? 60
@@ -22,7 +21,7 @@ class Camera extends Matrix
         @maxDist = opt?.maxDist or @far/2
         @minDist = opt?.minDist or 2
         
-        super
+        super @fov, @aspect, @near, @far
 
         window.addEventListener 'mousewheel', @onMouseWheel
         window.addEventListener 'mousedown',  @onMouseDown
@@ -31,8 +30,16 @@ class Camera extends Matrix
         window.addEventListener 'keypress',   @onKeyPress
         window.addEventListener 'keyrelease', @onKeyRelease
         
-        @cam = new THREE.PerspectiveCamera @fov, @aspect, @near, @far
-        @cam.position.set 0, 0, @dist
+        # @cam = new THREE.PerspectiveCamera @fov, @aspect, @near, @far
+        @position.set 0, 0, @dist
+
+    reset: ->
+        @position.set 0, 0, @dist
+        @quaternion.copy Quaternion.minusZupY
+
+    getPosition:  -> new Vector @position
+    getDirection: -> new Quaternion(@quaternion).rotate Vector.minusZ
+    getUp:        -> new Quaternion(@quaternion).rotate Vector.unitY
 
     del: =>
         window.removeEventListener 'mousewheel', @onMouseWheel
@@ -42,7 +49,6 @@ class Camera extends Matrix
         window.removeEventListener 'mouseup',    @onMouseUp
         window.removeEventListener 'keypress',   @onKeyPress
         window.removeEventListener 'keyrelease', @onKeyRelease
-        @cam = null
 
     onMouseDown: (event) => 
         @mouseX = event.clientX
@@ -62,17 +68,17 @@ class Camera extends Matrix
         deltaY = @mouseY-event.clientY
         @mouseX = event.clientX
         @mouseY = event.clientY
-        q = @cam.quaternion.clone()
+        q = @quaternion.clone()
         q.multiply new THREE.Quaternion().setFromAxisAngle new THREE.Vector3(1, 0, 0) ,deltaY*0.005
         q.multiply new THREE.Quaternion().setFromAxisAngle new THREE.Vector3(0, 1, 0), deltaX*0.005
-        @cam.position.set(0,0,@dist).applyQuaternion q
-        @cam.quaternion.copy q
+        @position.set(0,0,@dist).applyQuaternion q
+        @quaternion.copy q
 
     onMouseWheel: (event) => @zoom 1-event.wheelDelta/10000
     
     zoom: (factor) =>
         @dist = clamp @minDist, @maxDist, @dist*factor
-        @cam.position.setLength @dist
+        @position.setLength @dist
         
     setFov: (fov) -> @fov = Math.max(2.0, Math.min fov, 175.0)
         
