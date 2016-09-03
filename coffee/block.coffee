@@ -80,36 +80,13 @@ class Block extends Item
         @mesh.add @createEdge Material.block6,  0,-90, 180, "bot left"
         @mesh.add @createEdge Material.block6,  0,-90, 90,  "back left"
         @mesh.add @createEdge Material.block6,  0,-90, -90, "front left"
-     
+
     createSide: (mat, xr, yr, name) ->
-
-        faces     = 2
-        triangles = faces * 2
-
-        p = new Float32Array triangles * 3 * 3
-        n = new Float32Array triangles * 3 * 3
-            
-        i = -1
-        
-        tri = (x1, y1, z1, x2, y2, z2, x3, y3, z3) ->
-            v1 = new Vector x1, y1, z1
-            v2 = new Vector x2, y2, z2
-            v3 = new Vector x3, y3, z3
-            m = v2.minus(v1).cross(v3.minus(v1)).normal()
-            p[i+=1] = x1 ; n[i] = m.x ; p[i+=1] = y1; n[i] = m.y ; p[i+=1] = z1 ; n[i] = m.z
-            p[i+=1] = x2 ; n[i] = m.x ; p[i+=1] = y2; n[i] = m.y ; p[i+=1] = z2 ; n[i] = m.z
-            p[i+=1] = x3 ; n[i] = m.x ; p[i+=1] = y3; n[i] = m.y ; p[i+=1] = z3 ; n[i] = m.z
 
         k = 0.25
         l = 0.4
-        m = 0.5
          
-        tri  -k, -k, l,     k,  k, l,    -k,  k, l
-        tri   k,  k, l,    -k, -k, l,     k, -k, l
-                      
-        geom = new THREE.BufferGeometry
-        geom.addAttribute 'position', new THREE.BufferAttribute p, 3 
-        geom.addAttribute 'normal',   new THREE.BufferAttribute n, 3 
+        geom = @quadGeom -k, -k, l, k, k, l, -k,  k, l, k, k, l, -k, -k, l, k, -k, l
 
         mesh = new THREE.Mesh geom, mat
         mesh.receiveShadow = true
@@ -119,6 +96,19 @@ class Block extends Item
 
     createEdge: (mat, xr, yr, zr, name) ->
 
+        k = 0.25
+        l = 0.4
+        m = 0.5
+         #              
+        geom = @quadGeom -m,  m, m, m, m, m, k, l, k, -k, l, k, -m, m, m, k, l, k
+#              
+        mesh = new THREE.Mesh geom, mat
+        mesh.receiveShadow = true
+        mesh.rotation.copy new THREE.Euler deg2rad(xr), deg2rad(yr), deg2rad(zr)
+        mesh.name = name
+        mesh
+     
+    quadGeom: (x1, y1, z1, x2, y2, z2, x3, y3, z3, x4, y4, z4, x5, y5, z5, x6, y6, z6) ->
         faces     = 2
         triangles = faces * 2
 
@@ -135,22 +125,13 @@ class Block extends Item
             p[i+=1] = x1 ; n[i] = m.x ; p[i+=1] = y1; n[i] = m.y ; p[i+=1] = z1 ; n[i] = m.z
             p[i+=1] = x2 ; n[i] = m.x ; p[i+=1] = y2; n[i] = m.y ; p[i+=1] = z2 ; n[i] = m.z
             p[i+=1] = x3 ; n[i] = m.x ; p[i+=1] = y3; n[i] = m.y ; p[i+=1] = z3 ; n[i] = m.z
-
-        k = 0.25
-        l = 0.4
-        m = 0.5
-         #              
-        tri  -m,  m, m,     m,  m, m,     k,  l, k
-        tri  -k,  l, k,    -m,  m, m,     k,  l, k
-#              
+     
+        tri  x1, y1, z1, x2, y2, z2, x3, y3, z3
+        tri  x4, y4, z4, x5, y5, z5, x6, y6, z6
+                      
         geom = new THREE.BufferGeometry
         geom.addAttribute 'position', new THREE.BufferAttribute p, 3 
         geom.addAttribute 'normal',   new THREE.BufferAttribute n, 3 
-
-        mesh = new THREE.Mesh geom, mat
-        mesh.receiveShadow = true
-        mesh.rotation.copy new THREE.Euler deg2rad(xr), deg2rad(yr), deg2rad(zr)
-        mesh.name = name
-        mesh
-
+        geom
+        
 module.exports = Block

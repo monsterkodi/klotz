@@ -127,12 +127,12 @@ class World extends Actor
         @deleteAllObjects()
         @camera.reset()
         block = new Block
-        # block.setOrientation Quaternion.ZupY
+        block.setOrientation Quaternion.ZupY
         @addObjectAtPos block, 0,0,0
-        # block = new Block
-        # @addObjectAtPos block, 1,0,0
-        # block = new Block
-        # @addObjectAtPos block, -1,0,0
+        block = new Block
+        @addObjectAtPos block, 1,0,0
+        block = new Block
+        @addObjectAtPos block, -1,0,0
         
         @applyScheme @dict.scheme ? 'default'
     
