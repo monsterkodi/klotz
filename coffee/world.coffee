@@ -35,7 +35,7 @@ class World extends Actor
     
     constructor: (@view) ->
               
-        @speed       = 6
+        @speed       = 10
         @rasterSize = 0.05
         
         super
@@ -91,9 +91,12 @@ class World extends Actor
         mouse = new THREE.Vector2 2*(x/@view.clientWidth)-1, -(2*(y/@view.clientHeight)-1)
         raycaster = new THREE.Raycaster
         raycaster.setFromCamera mouse, @camera.cam
-    
         hit = raycaster.intersectObjects @scene.children, true
-        log first(hit).object.name
+        if hit.length
+            o = first(hit).object
+            log o
+            block = @objectWithName o.parent.name
+            block?.push o.name
         
     # 000  000   000  000  000000000
     # 000  0000  000  000     000   
@@ -122,13 +125,14 @@ class World extends Actor
     #  0000000  000   000  00000000  000   000     000     00000000
         
     create: (@dict={}) -> 
-        
+        @deleteAllObjects()
         block = new Block
-        block.mesh.rotateZ deg2rad 180
+        block.setOrientation Quaternion.ZupY
+        @addObjectAtPos block, 0,0,0
         block = new Block
-        block.mesh.translateX 1
+        @addObjectAtPos block, 1,0,0
         block = new Block
-        block.mesh.translateX -1
+        @addObjectAtPos block, -1,0,0
         
         @applyScheme @dict.scheme ? 'default'
     
@@ -146,6 +150,8 @@ class World extends Actor
         colors = _.clone Scheme[scheme]
         
         shininess = 
+            text:    30
+            menu:    30
             plate:   10
             raster:  20
             wall:    20
@@ -155,11 +161,11 @@ class World extends Actor
             block4:  10
             block5:  10
             block6:  10
-            text:   200
             
         for k,v of colors
             mat = Material[k]
             mat.color    = v.color
+            mat.specular = v.specular if v.specular?
             if shininess[k]?
                 mat.shininess = v.shininess ? shininess[k]
 
@@ -193,25 +199,17 @@ class World extends Actor
         nextLevel = (world.level_index+(_.isNumber(action) and action or 1)) % World.levels.list.length
         world.create World.levels.list[nextLevel]
 
-    activate: (objectName) -> @getObjectWithName(objectName)?.setActive? true
-    
-    #  0000000   0000000    0000000         0000000   0000000          000  00000000   0000000  000000000
-    # 000   000  000   000  000   000      000   000  000   000        000  000       000          000   
-    # 000000000  000   000  000   000      000   000  0000000          000  0000000   000          000   
-    # 000   000  000   000  000   000      000   000  000   000  000   000  000       000          000   
-    # 000   000  0000000    0000000         0000000   0000000     0000000   00000000   0000000     000   
-    
-    addObjectAtPos: (object, x, y, z) ->
-        pos = new Pos x, y, z
-        object = @newObject object
-        @setObjectAtPos object, pos
-        @addObject object
-
     #  0000000   0000000          000  00000000   0000000  000000000   0000000
     # 000   000  000   000        000  000       000          000     000     
     # 000   000  0000000          000  0000000   000          000     0000000 
     # 000   000  000   000  000   000  000       000          000          000
     #  0000000   0000000     0000000   00000000   0000000     000     0000000 
+
+    addObjectAtPos: (object, x, y, z) ->
+        pos = new Pos x, y, z
+        object = @newObject object
+        @setObjectAtPos object, pos
+        @addObject object
         
     setObjectAtPos: (object, pos) -> object.setPosition new Pos pos
 
@@ -258,16 +256,11 @@ class World extends Actor
                 log "WARNING World.deleteAllObjects object no auto remove #{last(@objects).name}"
                 @objects.pop()
     
-    deleteObjectsWithClassName: (className) ->
-        for o in _.clone @objects
-            if className == o.getClassName()
-                o.del()
-    
-    getObjectWithName: (objectName) ->
+    objectWithName: (name) ->
         for o in @objects
-            if objectName == o.name
+            if name == o.name
                 return o
-        log "World.getObjectWithName [WARNING] no object with name #{objectName}"
+        log "World.objectWithName [WARNING] no object with name #{name}"
         null
         
     #  0000000  000000000  00000000  00000000       

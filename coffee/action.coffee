@@ -9,6 +9,7 @@ _ = require 'lodash'
 class Action
     
     @NOOP       = 0
+    @ROLL       = 1
     
     @SHOW       = 1
     @HIDE       = 2
@@ -50,7 +51,7 @@ class Action
         else if _.isFunction @object
             @object @
     
-    init: ->    @object.initAction? @
+    # init: ->    @object.initAction? @
     finish: ->  @object.finishAction? @
     finished: -> 
         @object?.actionFinished? @
@@ -61,9 +62,9 @@ class Action
         @delta   = 0 # ms between this and previous frame
         @current = 0 # relative (ms since @start)
 
-    getRelativeTime:  -> @current / @getDuration() 
-    getRelativeDelta: -> @delta / @getDuration()
-    getDuration:      -> world.mapMsTime @duration 
+    relTime:     -> @current / @getDuration() 
+    relDelta:    -> @delta / @getDuration()
+    getDuration: -> world.mapMsTime @duration 
 
     step: (step) ->
         @delta = step.delta
@@ -80,7 +81,6 @@ class Action
             else
                 @finished()
         else
-            @current += @delta
             @perform()
         
 module.exports = Action

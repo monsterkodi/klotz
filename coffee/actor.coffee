@@ -37,10 +37,10 @@ class Actor extends Emitter
         for k,a of @actions
             @removeAction a if a.object == o
          
-    getActionWithId: (actionId) -> _.find @actions, (a) -> a?.id == actionId
+    actionWithId: (actionId) -> _.find @actions, (a) -> a?.id == actionId
     getActionWithName: (name) -> _.find @actions, (a) -> a?.name == name
 
-    initAction: ->
+    # initAction: ->
     performAction: ->
     finishAction: -> 
     actionFinished: -> 

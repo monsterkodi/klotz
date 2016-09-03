@@ -20,8 +20,12 @@ module.exports =
             color:  rgb 0.5, 0, 0
         wall:
             color:  rgb 0.16, 0, 0
+        menu:             
+            color:    rgb 1,1,1
+            specular: rgb 0.2, 0.2, 0.2
         text:             
-            color:  rgb 0.8, 0.8, 0
+            color:    rgb 0.0, 0.5, 1
+            specular: rgb 0.0, 0, 0.5
         block1:            
             color:  rgb 1,0,0
         block2:            

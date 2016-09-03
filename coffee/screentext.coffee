@@ -48,7 +48,7 @@ class ScreenText extends Actor
         world.removeActionsOfObject @
         world.text = null if world.text == @
     
-    show: -> @startTimedAction @getActionWithId Action.SHOW
+    show: -> @startTimedAction @actionWithId Action.SHOW
     
     addText: (str, scaleFactor) ->
         geom = new THREE.TextGeometry str, 
@@ -102,8 +102,8 @@ class ScreenText extends Actor
     fadeOut: -> 
         return if @fadingOut
         @fadingOut = true
-        @stopAction @getActionWithId Action.SHOW
-        @startTimedAction @getActionWithId Action.HIDE
+        @stopAction @actionWithId Action.SHOW
+        @startTimedAction @actionWithId Action.HIDE
     
 module.exports = ScreenText
     

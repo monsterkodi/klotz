@@ -16,8 +16,8 @@ class Menu extends ScreenText
         @callbacks = []
         @lineHeight = 1.1
         super
-        @getActionWithId(Action.SHOW).duration = 250
-        @getActionWithId(Action.HIDE).duration = 200
+        @actionWithId(Action.SHOW).duration = 250
+        @actionWithId(Action.HIDE).duration = 200
         
     del: ->
         world.menu = null

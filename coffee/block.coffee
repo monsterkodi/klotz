@@ -9,25 +9,46 @@ deg2rad
 }        = require './lib/tools'
 Vector   = require './lib/vector'
 Item     = require './item'
+Action   = require './action'
 Material = require './material'
 
 class Block extends Item
     
     @id = 0
+    @norm = 
+        top:   Vector.unitZ
+        bot:   Vector.minusZ
+        left:  Vector.unitX
+        right: Vector.minusX
+        front: Vector.unitY
+        back:  Vector.minusY
     
     constructor: () ->
         Block.id += 1
         @name = "block_#{Block.id}"
         super
+        @addAction new Action @, Action.ROLL, "roll", 200 
+    
+    push: (side) ->
+        log "Block.push #{side} ", @position, Block.norm[side]
+        world.addAction @actionWithId Action.ROLL
+        
+    # initAction: (action) -> log "initAction #{action.name}"
+    finishAction: (action) -> #log "finishAction #{action.name}" 
+    actionFinished: (action) -> #log "actionFinished #{action.name}" 
+    performAction: (action) -> 
+        # log "performAction #{action.name} #{action.delta} #{action.current}"
+        # log "performAction #{action.name} #{action.relTime()}"
        
     createMesh: ->
         @mesh = new THREE.Object3D
-        @mesh.add @createSide Material.block1,   0, 0, "#{@name}_top"
-        @mesh.add @createSide Material.block2, 180, 0, "#{@name}_bot"
-        @mesh.add @createSide Material.block3,  90, 0, "#{@name}_front"
-        @mesh.add @createSide Material.block5, -90, 0, "#{@name}_back"
-        @mesh.add @createSide Material.block2,  0, 90, "#{@name}_left"
-        @mesh.add @createSide Material.block1,  0,-90, "#{@name}_right"
+        @mesh.name = @name
+        @mesh.add @createSide Material.block1,   0, 0, "front"
+        @mesh.add @createSide Material.block2, 180, 0, "back"
+        @mesh.add @createSide Material.block3,  90, 0, "bot"
+        @mesh.add @createSide Material.block5, -90, 0, "top"
+        @mesh.add @createSide Material.block2,  0, 90, "right"
+        @mesh.add @createSide Material.block1,  0,-90, "left"
        
     createSide: (mat, xr, yr, name) ->
 

@@ -8,41 +8,39 @@
 Pos        = require './lib/pos'
 Vector     = require './lib/vector'
 Quaternion = require './lib/quaternion'
+Actor      = require './actor'
 
-class Item
+class Item extends Actor
 
     constructor: ->
+        super
         @name = @constructor.name if not @name?
         @createMesh?()
         world.scene.add @mesh if @mesh?
         @position         = new Vector
         @direction        = new Vector
-        @current_position = new Vector
-        @current_orientation = new Quaternion
+        # @current_position = new Vector
+        # @current_orientation = new Quaternion
 
     del: ->
         return if @name == 'del'
-        super 
         @name = 'del'
         world.scene.remove @mesh if @mesh?
         world.removeObject @
-        @emit 'deleted'
+        # @emit 'deleted'
+
+    getPos: -> new Pos @current_position
+    setPos: (x,y,z) -> @setPosition new Pos x,y,z
         
     setPosition: (x,y,z) -> 
         @position = new Vector x,y,z
         @setCurrentPosition @position
 
-    getPos: -> new Pos @current_position
-    setPos: (x,y,z) -> @setPosition new Pos x,y,z
-    
     setOrientation: (q) -> 
-        @current_orientation = @orientation = new Quaternion q
+        @orientation = new Quaternion q
+        @setCurrentOrientation @orientation        
         
-    setCurrentPosition: (p) -> 
-        # log "item.setCurrentPosition #{@name}", p
-        @current_position = new Vector p
-        @mesh?.position.copy @current_position
-        
-    setCurrentOrientation: (q) -> @current_orientation = q
+    setCurrentPosition: (p) -> @mesh?.position.copy p
+    setCurrentOrientation: (q) -> @mesh?.quaternion.copy q
     
 module.exports = Item
