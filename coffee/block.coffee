@@ -40,35 +40,34 @@ class Block extends Item
     
     constructor: () ->
         Block.id += 1
-        @neighbors = []
         @pivots = []
         @name = "block_#{Block.id}"
         super
         @addAction new Action @, Action.ROLL, "roll_#{@name}", 200 
     
-    delNeighbor: (n) ->
-        _.pull @neighbors, n
-        @updatePivots()
-        
-    addNeighbor: (n) ->
-        @neighbors.push n
-        @updatePivots()
-
     delPivots: ->
         @pivots = []
         while @mesh.children.length > 30
             @mesh.remove @mesh.children.pop()
-        
+      
     updatePivots: ->
         
         @delPivots()
-            
-        for n in @neighbors
-            dir = @dirForPos n.position
-            continue if not @isFree Block.neg[dir]
-            for side in Block.dirs[dir]
-                if @isFree side
-                    @pivots.push "#{side} #{dir}"
+         
+        for dir,perps of Block.dirs
+            # log "dir #{dir} perps:", perps
+            if @neighborAtPos @position.plus @orientation.rotate Block.norm[dir]
+                log 'got n in dir', dir
+                for side in perps
+                    if @isFree side 
+                        @pivots.push "#{side} #{dir}"
+            for side in perps
+                p = @position.clone()
+                p.add @orientation.rotate Block.norm[dir]
+                p.add @orientation.rotate Block.norm[side]
+                if @neighborAtPos p
+                    if @isFree side 
+                        @pivots.push "#{side} #{dir}"
                     
         for p in @pivots 
             geom = new THREE.SphereBufferGeometry 0.1
@@ -78,12 +77,9 @@ class Block extends Item
             torus.position.add Block.norm[p.split(' ')[1]].mul 0.5
             @mesh.add torus
     
-    neighborAtPos: (p) ->
-        for n in @neighbors
-            return n if n.position.minus(p).length() < 0.1
+    neighborAtPos: (p) -> world.blockAtPos p
     
-    isFree: (side) ->
-        not @neighborAtPos @position.plus @orientation.rotate Block.norm[side]
+    isFree: (side) -> not @neighborAtPos @position.plus @orientation.rotate Block.norm[side]
         
     dirForPos: (p) ->
         for k,v of Block.norm
@@ -94,6 +90,10 @@ class Block extends Item
     push: (sideName) ->
         split = sideName.split ' '
         if split.length > 1
+            pivot = "#{split[0]} #{split[1]}" 
+            if pivot in @pivots
+                @rotateAround pivot
+                return
             pivot = "#{Block.neg[split[0]]} #{Block.neg[split[1]]}" 
             if pivot in @pivots
                 @rotateAround pivot
@@ -102,32 +102,31 @@ class Block extends Item
             if pivot in @pivots
                 @rotateAround pivot
                 return
+            # log "sideName #{sideName}", @pivots
         else 
             log "----- '#{split[0]}'", @pivots
         
     rotateAround: (pivot) ->
         [frst, scnd] = pivot.split ' '
-        log "rotateAround: '#{pivot}'"
+        # log "rotateAround: '#{pivot}'"
         @rotPivot  = pivot
         @rotCenter = Block.norm[frst].div(2).plus Block.norm[scnd].div(2)
         @rotAxis   = Block.norm[frst].cross Block.norm[scnd]
         @rotAxis   = @orientation.rotate(Block.norm[frst]).cross @orientation.rotate(Block.norm[scnd])
-        # @rotAxis   = Block.norm[scnd].cross Block.norm[frst]
         world.addAction @actionWithId Action.ROLL
         
-    # initAction: (action) -> log "initAction #{action.name}"                
     performAction: (action) -> 
         switch action.id
             when Action.ROLL
-                # log "performAction ROLL #{action.relTime()}"
                 rot = Quaternion.rotationAroundVector(action.relTime()*90, @rotAxis)
                 ctr = @orientation.rotate @rotCenter
                 newPos = @position.plus(ctr).minus(rot.rotate ctr)
                 @setCurrentPosition newPos
                 rot = Quaternion.rotationAroundVector(action.relTime()*90, @rotAxis)
                 @setCurrentOrientation rot.mul @orientation
+                world.centerCamera()
        
-    finishAction: (action) -> #log "finishAction #{action.name}" 
+    finishAction: (action) ->
         switch action.id
             when Action.ROLL
                 oldPos = @position
@@ -135,15 +134,18 @@ class Block extends Item
                 @setOrientation @currentOrientation()
                 world.objectMoved @, oldPos, @position
     
-    actionFinished: (action) -> #log "actionFinished #{action.name}" 
+    actionFinished: (action) ->
         switch action.id
             when Action.ROLL
                 if not @isBonding()
                     @rotateAround @rotPivot
+                else
+                    world.centerCamera()
     
     isBonding: ->
-        for n in @neighbors
-            return true if isBondingWith n
+        for dir,norm of Block.norm
+            neighbor = @neighborAtPos @position.plus norm
+            return true if neighbor? and @isBondingWith neighbor
 
     isBondingWith: ->
         return true

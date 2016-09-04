@@ -35,7 +35,7 @@ class World extends Actor
     
     constructor: (@view) ->
               
-        @speed       = 5
+        @speed      = 5
         @rasterSize = 0.05
         
         super
@@ -140,12 +140,13 @@ class World extends Actor
         
         @applyScheme @dict.scheme ? 'default'
         
+        @centerCamera()
+        
+    centerCamera: ->
         center = new Vector
         for block in @objects
-            log "block ---------- #{block.name}", block.pivots
-            center.add block.position
+            center.add block.currentPosition()
         @camera.lookAt center.div @objects.length
-        log 'center', @camera.center
     
     restart: => @create @dict
 
@@ -224,23 +225,15 @@ class World extends Actor
         
     setObjectAtPos: (object, pos) -> 
         object.setPosition new Pos pos
+        @updatePivots()
+        
+    updatePivots: ->
         for o in @objects
-            if o != object and @neighboring o.position, object.position
-                o.addNeighbor object
-                object.addNeighbor o
+            o.updatePivots()
 
     objectMoved: (object, oldPos, newPos) ->
         log "#{object.name}", new Pos(oldPos), new Pos(newPos)
-        for o in @objects
-            if o != object and @neighboring o.position, oldPos
-                log 'del'
-                o.delNeighbor object
-                object.delNeighbor o
-        for o in @objects
-            if o != object and @neighboring o.position, newPos
-                log 'add'
-                o.addNeighbor object
-                object.addNeighbor o
+        @updatePivots()
 
     neighboring: (p1, p2) ->
         l = p1.minus(p2).length()
@@ -263,6 +256,10 @@ class World extends Actor
     removeObject: (object) ->
         _.pull @lights, object
         _.pull @objects, object
+        
+    blockAtPos: (pos) ->
+        for o in @objects
+            return o if o.position.minus(pos).length() < 0.1
     
     #   0000000    00000000  000      00000000  000000000  00000000
     #   000   000  000       000      000          000     000     
