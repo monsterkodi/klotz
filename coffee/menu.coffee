@@ -17,7 +17,7 @@ class Menu extends ScreenText
         @lineHeight = 1.1
         super
         @actionWithId(Action.SHOW).duration = 250
-        @actionWithId(Action.HIDE).duration = 200
+        @actionWithId(Action.HIDE).duration = 100
         
     del: ->
         world.menu = null

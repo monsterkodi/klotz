@@ -6,41 +6,148 @@
 {
 last,
 deg2rad
-}        = require './lib/tools'
-Vector   = require './lib/vector'
-Item     = require './item'
-Action   = require './action'
-Material = require './material'
+}          = require './lib/tools'
+Vector     = require './lib/vector'
+Quaternion = require './lib/quaternion'
+Item       = require './item'
+Action     = require './action'
+Material   = require './material'
 
 class Block extends Item
     
     @id = 0
     @norm = 
-        top:   Vector.unitZ
-        bot:   Vector.minusZ
-        left:  Vector.unitX
-        right: Vector.minusX
-        front: Vector.unitY
-        back:  Vector.minusY
+        right: Vector.unitX
+        top:   Vector.unitY
+        front: Vector.unitZ
+        left:  Vector.minusX
+        bot:   Vector.minusY
+        back:  Vector.minusZ
+    @dirs =
+        top:   ['left', 'right', 'front', 'back']
+        bot:   ['left', 'right', 'front', 'back']
+        front: ['left', 'right', 'top', 'bot']
+        back:  ['left', 'right', 'top', 'bot']
+        left:  ['top', 'bot', 'front', 'back']
+        right: ['top', 'bot', 'front', 'back']
+    @neg = 
+        back:  'front'
+        left:  'right'
+        front: 'back'
+        right: 'left'
+        top:   'bot'
+        bot:   'top'
     
     constructor: () ->
         Block.id += 1
+        @neighbors = []
+        @pivots = []
         @name = "block_#{Block.id}"
         super
-        @addAction new Action @, Action.ROLL, "roll", 200 
+        @addAction new Action @, Action.ROLL, "roll_#{@name}", 200 
     
-    push: (name) ->
-        side = name.split(' ')[0]
-        log "Block.push '#{name}' side: '#{side}'", Block.norm[side]
+    delNeighbor: (n) ->
+        _.pull @neighbors, n
+        @updatePivots()
+        
+    addNeighbor: (n) ->
+        @neighbors.push n
+        @updatePivots()
+
+    delPivots: ->
+        @pivots = []
+        while @mesh.children.length > 30
+            @mesh.remove @mesh.children.pop()
+        
+    updatePivots: ->
+        
+        @delPivots()
+            
+        for n in @neighbors
+            dir = @dirForPos n.position
+            continue if not @isFree Block.neg[dir]
+            for side in Block.dirs[dir]
+                if @isFree side
+                    @pivots.push "#{side} #{dir}"
+                    
+        for p in @pivots 
+            geom = new THREE.SphereBufferGeometry 0.1
+            torus = new THREE.Mesh geom, Material.pivot
+            torus.name = p
+            torus.position.add Block.norm[p.split(' ')[0]].mul 0.5
+            torus.position.add Block.norm[p.split(' ')[1]].mul 0.5
+            @mesh.add torus
+    
+    neighborAtPos: (p) ->
+        for n in @neighbors
+            return n if n.position.minus(p).length() < 0.1
+    
+    isFree: (side) ->
+        not @neighborAtPos @position.plus @orientation.rotate Block.norm[side]
+        
+    dirForPos: (p) ->
+        for k,v of Block.norm
+            n = @orientation.rotate v
+            if n.dot(p.minus(@position)) > 0.9
+                return k
+    
+    push: (sideName) ->
+        split = sideName.split ' '
+        if split.length > 1
+            pivot = "#{Block.neg[split[0]]} #{Block.neg[split[1]]}" 
+            if pivot in @pivots
+                @rotateAround pivot
+                return
+            pivot = "#{split[1]} #{Block.neg[split[0]]}" 
+            if pivot in @pivots
+                @rotateAround pivot
+                return
+        else 
+            log "----- '#{split[0]}'", @pivots
+        
+    rotateAround: (pivot) ->
+        [frst, scnd] = pivot.split ' '
+        log "rotateAround: '#{pivot}'"
+        @rotPivot  = pivot
+        @rotCenter = Block.norm[frst].div(2).plus Block.norm[scnd].div(2)
+        @rotAxis   = Block.norm[frst].cross Block.norm[scnd]
+        @rotAxis   = @orientation.rotate(Block.norm[frst]).cross @orientation.rotate(Block.norm[scnd])
+        # @rotAxis   = Block.norm[scnd].cross Block.norm[frst]
         world.addAction @actionWithId Action.ROLL
         
-    # initAction: (action) -> log "initAction #{action.name}"
-    finishAction: (action) -> #log "finishAction #{action.name}" 
-    actionFinished: (action) -> #log "actionFinished #{action.name}" 
+    # initAction: (action) -> log "initAction #{action.name}"                
     performAction: (action) -> 
-        # log "performAction #{action.name} #{action.delta} #{action.current}"
-        # log "performAction #{action.name} #{action.relTime()}"
+        switch action.id
+            when Action.ROLL
+                # log "performAction ROLL #{action.relTime()}"
+                rot = Quaternion.rotationAroundVector(action.relTime()*90, @rotAxis)
+                ctr = @orientation.rotate @rotCenter
+                newPos = @position.plus(ctr).minus(rot.rotate ctr)
+                @setCurrentPosition newPos
+                rot = Quaternion.rotationAroundVector(action.relTime()*90, @rotAxis)
+                @setCurrentOrientation rot.mul @orientation
        
+    finishAction: (action) -> #log "finishAction #{action.name}" 
+        switch action.id
+            when Action.ROLL
+                oldPos = @position
+                @setPosition    @currentPosition()
+                @setOrientation @currentOrientation()
+                world.objectMoved @, oldPos, @position
+    
+    actionFinished: (action) -> #log "actionFinished #{action.name}" 
+        switch action.id
+            when Action.ROLL
+                if not @isBonding()
+                    @rotateAround @rotPivot
+    
+    isBonding: ->
+        for n in @neighbors
+            return true if isBondingWith n
+
+    isBondingWith: ->
+        return true
+    
     createMesh: ->
         @mesh = new THREE.Object3D
         @mesh.name = @name

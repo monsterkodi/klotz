@@ -16,16 +16,14 @@ module.exports =
     # 0000000    00000000  000       000   000   0000000   0000000     000   
     
     default:          
-        plate:
-            color:  rgb 0.5, 0, 0
-        wall:
-            color:  rgb 0.16, 0, 0
         menu:             
             color:    rgb 1,1,1
             specular: rgb 0.2, 0.2, 0.2
         text:             
             color:    rgb 0.0, 0.5, 1
             specular: rgb 0.0, 0, 0.5
+        pivot:
+            color:  rgb 0.1, 0.1, 0.1
         block1:            
             color:  rgb 1,0,0
         block2:            

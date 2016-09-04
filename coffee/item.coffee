@@ -18,16 +18,12 @@ class Item extends Actor
         @createMesh?()
         world.scene.add @mesh if @mesh?
         @position         = new Vector
-        @direction        = new Vector
-        # @current_position = new Vector
-        # @current_orientation = new Quaternion
+        @orientation      = Quaternion.ZupY.clone()
 
     del: ->
-        return if @name == 'del'
-        @name = 'del'
         world.scene.remove @mesh if @mesh?
         world.removeObject @
-        # @emit 'deleted'
+        @mesh = null
 
     getPos: -> new Pos @current_position
     setPos: (x,y,z) -> @setPosition new Pos x,y,z
@@ -40,7 +36,9 @@ class Item extends Actor
         @orientation = new Quaternion q
         @setCurrentOrientation @orientation        
         
-    setCurrentPosition: (p) -> @mesh?.position.copy p
+    setCurrentPosition:    (p) -> @mesh?.position.copy p
     setCurrentOrientation: (q) -> @mesh?.quaternion.copy q
+    currentPosition:           -> new Vector @mesh.position
+    currentOrientation:        -> new Quaternion @mesh.quaternion
     
 module.exports = Item

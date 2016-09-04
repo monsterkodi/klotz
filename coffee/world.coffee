@@ -35,7 +35,7 @@ class World extends Actor
     
     constructor: (@view) ->
               
-        @speed       = 10
+        @speed       = 5
         @rasterSize = 0.05
         
         super
@@ -127,14 +127,25 @@ class World extends Actor
         @deleteAllObjects()
         @camera.reset()
         block = new Block
-        block.setOrientation Quaternion.ZupY
+        # block.setOrientation Quaternion.ZupY
         @addObjectAtPos block, 0,0,0
         block = new Block
         @addObjectAtPos block, 1,0,0
         block = new Block
+        # block.setOrientation Quaternion.minusZdownY
         @addObjectAtPos block, -1,0,0
+        block = new Block
+        block.setOrientation Quaternion.minusZdownY
+        @addObjectAtPos block, 1,1,0
         
         @applyScheme @dict.scheme ? 'default'
+        
+        center = new Vector
+        for block in @objects
+            log "block ---------- #{block.name}", block.pivots
+            center.add block.position
+        @camera.lookAt center.div @objects.length
+        log 'center', @camera.center
     
     restart: => @create @dict
 
@@ -211,8 +222,30 @@ class World extends Actor
         @setObjectAtPos object, pos
         @addObject object
         
-    setObjectAtPos: (object, pos) -> object.setPosition new Pos pos
+    setObjectAtPos: (object, pos) -> 
+        object.setPosition new Pos pos
+        for o in @objects
+            if o != object and @neighboring o.position, object.position
+                o.addNeighbor object
+                object.addNeighbor o
 
+    objectMoved: (object, oldPos, newPos) ->
+        log "#{object.name}", new Pos(oldPos), new Pos(newPos)
+        for o in @objects
+            if o != object and @neighboring o.position, oldPos
+                log 'del'
+                o.delNeighbor object
+                object.delNeighbor o
+        for o in @objects
+            if o != object and @neighboring o.position, newPos
+                log 'add'
+                o.addNeighbor object
+                object.addNeighbor o
+
+    neighboring: (p1, p2) ->
+        l = p1.minus(p2).length()
+        l <= 1.1
+    
     newObject: (object) ->
         if _.isString object
             if object.startsWith 'new'
@@ -225,10 +258,7 @@ class World extends Actor
         
     addObject: (object) ->
         object = @newObject object
-        if object instanceof Light
-            @lights.push object
-        else
-            @objects.push object
+        @objects.push object
 
     removeObject: (object) ->
         _.pull @lights, object
@@ -255,6 +285,8 @@ class World extends Actor
             if oldSize == @objects.length
                 log "WARNING World.deleteAllObjects object no auto remove #{last(@objects).name}"
                 @objects.pop()
+                
+        @actions = {}
     
     objectWithName: (name) ->
         for o in @objects

@@ -20,6 +20,7 @@ class Camera extends THREE.PerspectiveCamera
         @dist   = opt?.dist or 3
         @maxDist = opt?.maxDist or @far/2
         @minDist = opt?.minDist or 2
+        @center  = new Vector 0.5, 0.5, 0.5
         
         super @fov, @aspect, @near, @far
 
@@ -30,12 +31,12 @@ class Camera extends THREE.PerspectiveCamera
         window.addEventListener 'keypress',   @onKeyPress
         window.addEventListener 'keyrelease', @onKeyRelease
         
-        # @cam = new THREE.PerspectiveCamera @fov, @aspect, @near, @far
         @position.set 0, 0, @dist
 
     reset: ->
-        @position.set 0, 0, @dist
-        @quaternion.copy Quaternion.minusZupY
+        @lookAt 0,0,0
+        # @position.set 0, 0, @dist
+        @quaternion.copy Quaternion.ZupY
 
     getPosition:  -> new Vector @position
     getDirection: -> new Quaternion(@quaternion).rotate Vector.minusZ
@@ -71,14 +72,18 @@ class Camera extends THREE.PerspectiveCamera
         q = @quaternion.clone()
         q.multiply new THREE.Quaternion().setFromAxisAngle new THREE.Vector3(1, 0, 0) ,deltaY*0.005
         q.multiply new THREE.Quaternion().setFromAxisAngle new THREE.Vector3(0, 1, 0), deltaX*0.005
-        @position.set(0,0,@dist).applyQuaternion q
+        @position.copy @center.plus new THREE.Vector3(0,0,@dist).applyQuaternion q
         @quaternion.copy q
 
-    onMouseWheel: (event) => @zoom 1-event.wheelDelta/10000
+    onMouseWheel: (event) => @setDist 1-event.wheelDelta/10000
     
-    zoom: (factor) =>
+    setDist: (factor) =>
         @dist = clamp @minDist, @maxDist, @dist*factor
-        @position.setLength @dist
+        @position.copy @center.plus new THREE.Vector3(0,0,@dist).applyQuaternion @quaternion
+        
+    lookAt: (x,y,z) ->
+        @center = new Vector x,y,z 
+        @position.copy @center.plus new THREE.Vector3(0,0,@dist).applyQuaternion @quaternion
         
     setFov: (fov) -> @fov = Math.max(2.0, Math.min fov, 175.0)
         

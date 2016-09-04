@@ -34,8 +34,8 @@ class Quaternion
         if Number.isNaN @x
             throw new Error
             
-    copy: -> new Quaternion @
-    clone: (q) -> 
+    clone: -> new Quaternion @
+    copy: (q) -> 
         @x = q.x
         @y = q.y
         @z = q.z
@@ -103,7 +103,7 @@ class Quaternion
         @z -= quat.z
         @
     
-    minus: (quat) -> @copy().sub quat
+    minus: (quat) -> @clone().sub quat
 
     dot: (q) -> @x*q.x + @y*q.y + @z*q.z + @w*q.w
 
@@ -142,9 +142,9 @@ class Quaternion
         @z = -@z
         @ 
         
-    getNormal:     -> @copy().normalize()
-    getConjugate:  -> @copy().conjugate()
-    getInverse:    -> @copy().invert()
+    getNormal:     -> @clone().normalize()
+    getConjugate:  -> @clone().conjugate()
+    getInverse:    -> @clone().invert()
     neg:           -> new Quaternion -@w,-@x,-@y,-@z
     vector:        -> new Vector @x, @y, @z
     length:        -> Math.sqrt @w*@w + @x*@x + @y*@y + @z*@z
@@ -166,7 +166,8 @@ class Quaternion
                            C +  (E - F + G - H)/2,
                            D +  (E - F - G + H)/2
         else
-            new Quaternion @w*f, @x*f, @y*f, z*f
+            f = parseFloat quatOrScalar
+            new Quaternion @w*f, @x*f, @y*f, @z*f
 
     slerp: (quat, t) ->
 
@@ -228,35 +229,35 @@ class Quaternion
     @rot_270_Y = @rotationAroundVector 270, Vector.unitY
     @rot_270_Z = @rotationAroundVector 270, Vector.unitZ
 
-    @XupY        =                @rot_270_Y
-    @XupZ        = @rot_90_X.mul  @rot_270_Y
-    @XdownY      = @rot_180_X.mul @rot_270_Y
-    @XdownZ      = @rot_270_X.mul @rot_270_Y
-        
-    @YupX        = @rot_90_Y.mul  @rot_90_X
-    @YupZ        =                @rot_90_X
-    @YdownX      = @rot_270_Y.mul @rot_90_X
-    @YdownZ      = @rot_180_Y.mul @rot_90_X
+    @minusXupY   =                @rot_270_Y
+    @minusXupZ   = @rot_90_X.mul  @rot_270_Y
+    @minusXdownY = @rot_180_X.mul @rot_270_Y
+    @minusXdownZ = @rot_270_X.mul @rot_270_Y
+                 
+    @minusYupX   = @rot_90_Y.mul  @rot_90_X
+    @minusYupZ   =                @rot_90_X
+    @minusYdownX = @rot_270_Y.mul @rot_90_X
+    @minusYdownZ = @rot_180_Y.mul @rot_90_X
     
-    @ZupX        = @rot_90_Z.mul  @rot_180_X
-    @ZupY        = @rot_180_Z.mul @rot_180_X
-    @ZdownX      = @rot_270_Z.mul @rot_180_X
-    @ZdownY      =                @rot_180_X
+    @ZupX        = @rot_270_Z
+    @ZupY        = @rot_0
+    @ZdownX      = @rot_90_Z
+    @ZdownY      = @rot_180_Z
     
-    @minusXupY   =                @rot_90_Y
-    @minusXupZ   = @rot_90_X.mul  @rot_90_Y
-    @minusXdownY = @rot_180_X.mul @rot_90_Y
-    @minusXdownZ = @rot_270_X.mul @rot_90_Y
-        
-    @minusYupX   = @rot_270_Y.mul @rot_270_X
-    @minusYupZ   = @rot_180_Y.mul @rot_270_X
-    @minusYdownX = @rot_90_Y.mul  @rot_270_X
-    @minusYdownZ =                @rot_270_X
+    @XupY        =                @rot_90_Y
+    @XupZ        = @rot_90_X.mul  @rot_90_Y
+    @XdownY      = @rot_180_X.mul @rot_90_Y
+    @XdownZ      = @rot_270_X.mul @rot_90_Y
+                 
+    @YupX        = @rot_270_Y.mul @rot_270_X
+    @YupZ        = @rot_180_Y.mul @rot_270_X
+    @YdownX      = @rot_90_Y.mul  @rot_270_X
+    @YdownZ      =                @rot_270_X
     
-    @minusZupX   = @rot_270_Z
-    @minusZupY   = @rot_0
-    @minusZdownX = @rot_90_Z
-    @minusZdownY = @rot_180_Z
+    @minusZupX   = @rot_90_Z.mul  @rot_180_X
+    @minusZupY   = @rot_180_Z.mul @rot_180_X
+    @minusZdownX = @rot_270_Z.mul @rot_180_X
+    @minusZdownY =                @rot_180_X
         
     @rot_0.name       = 'rot_0'
     @rot_90_X.name    = 'rot_90_X'

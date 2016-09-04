@@ -54,9 +54,9 @@ class Action
     # init: ->    @object.initAction? @
     finish: ->  @object.finishAction? @
     finished: -> 
-        @object?.actionFinished? @
         world.removeAction @
         @reset()
+        @object?.actionFinished? @
 
     reset: -> 
         @delta   = 0 # ms between this and previous frame

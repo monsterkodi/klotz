@@ -17,18 +17,9 @@ module.exports =
         shading:        THREE.SmoothShading
         transparent:    true
 
-    raster: new THREE.MeshPhongMaterial 
+    pivot: new THREE.MeshPhongMaterial 
         side:           THREE.FrontSide
         shading:        THREE.SmoothShading
-
-    wall: new THREE.MeshPhongMaterial 
-        side:           THREE.FrontSide
-        shading:        THREE.SmoothShading
-          
-    plate: new THREE.MeshPhongMaterial 
-        side:           THREE.FrontSide
-        shading:        THREE.SmoothShading
-        emissiveIntensity: 0.05
 
     block1: new THREE.MeshPhongMaterial 
         side:           THREE.FrontSide
