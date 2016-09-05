@@ -37,7 +37,6 @@ class World extends Actor
               
         @speed      = 5
         @rasterSize = 0.05
-        
         super
         
         global.world = @
@@ -77,10 +76,6 @@ class World extends Actor
         # @scene.add @ambient
         
         @sun = new THREE.PointLight 0xffffff
-        # @sun.castShadow = true
-        # @sun.shadow.darkness = 0.5
-        # @sun.shadow.mapSize = new THREE.Vector2 2048, 2048
-        # @sun.shadow.bias = 0.01
         @scene.add @sun
 
         @sun2 = new THREE.PointLight 0xffffff
@@ -92,13 +87,11 @@ class World extends Actor
         
         @renderer.shadowMap.enabled = true
         
-        # geom = new THREE.PlaneGeometry 100, 100, 100, 100
-        # geom.rotateX deg2rad -90
         geom = new THREE.SphereGeometry @camera.far/2, 32, 32
         geom.translate 0,@camera.far/4,@camera.far/4
         @plane = new THREE.Mesh geom, Material.plane
         @plane.receiveShadow = true
-        @scene.add @plane
+        # @scene.add @plane
         
         @objects = []
         @lights  = []
@@ -151,24 +144,53 @@ class World extends Actor
         
     create: (@dict={}) -> 
         @deleteAllObjects()
+        Block.id = 0
         @camera.reset()
-        block = new Block 
-            front: 1
-            left:  1
-            top:   1
-        # block.setOrientation Quaternion.ZupY
-        @addObjectAtPos block, 0,0,0
-        block = new Block
-        @addObjectAtPos block, 1,0,0
-        block = new Block
-        # block.setOrientation Quaternion.minusZdownY
-        @addObjectAtPos block, -1,0,0
-        block = new Block
-        block.setOrientation Quaternion.minusZdownY
-        @addObjectAtPos block, 1,1,0
-        
+  
+        for i in [0...2]
+            for j in [0...2]
+                for k in [0...2]
+                    colors = {}
+                    colors.right  = 1 if i == 1
+                    colors.left   = 1 if i == 0
+                    colors.top    = 2 if j == 1
+                    colors.bot    = 2 if j == 0
+                    colors.front  = 3 if k == 1
+                    colors.back   = 3 if k == 0
+                    block = new Block colors
+                    @addObjectAtPos block, i,j,k
+             
+        # for i in [0...8]
+            # block = new Block 
+                # front: 1
+                # left:  2
+                # top:   0
+                # back:  0
+                # right: 1
+                # bot:   2
+            # block.setOrientation Quaternion.ZdownY if i % 2
+            # @addObjectAtPos block, i,0,0
+                         
         @applyScheme @dict.scheme ? 'default'
         @centerCamera()
+
+        @updateGraph()
+        @updatePivots()
+
+        @randCount = 32 # @objects.length * 5
+        @randomize()
+        
+    randomize: ->
+        pivs = []
+        for o in @objects
+            for p in o.pivots
+                pivs.push [o, p]
+        piv = pivs[randInt pivs.length]            
+        piv[0].push piv[1]
+        @randCount -= 1
+        if @randCount == 0
+            for o in @objects
+                o.actionWithId(Action.ROLL).duration = 200
         
     centerCamera: ->
         center = new Vector
@@ -228,20 +250,59 @@ class World extends Actor
     addObjectAtPos: (object, x, y, z) ->
         pos = new Pos x, y, z
         object = @newObject object
-        @setObjectAtPos object, pos
         @addObject object
+        @setObjectAtPos object, pos
         
     setObjectAtPos: (object, pos) -> 
         object.setPosition new Pos pos
+        @updateGraph()
         @updatePivots()
         
     updatePivots: ->
         for o in @objects
             o.updatePivots()
 
-    objectMoved: (object, oldPos, newPos) ->
-        # log "world.objectMoved #{object.name}", new Pos(oldPos), new Pos(newPos)
+    delPivots: ->
+        for o in @objects
+            o.delPivots()
+
+    updateGraph: ->
+        @graph = {}
+        for o in @objects
+            @graph[o.name] = []
+            for b in @objects
+                if o.isNeighbor b
+                    @graph[o.name].push b.name
+
+    mightMove: (o) ->
+        g = _.cloneDeep @graph
+        for n in g[o.name]
+            _.pull g[n], o.name
+        delete g[o.name]
+        connected = @isConnected g
+        log "mightMove #{o.name} #{connected}", g
+        connected
+        
+    isConnected: (g) ->
+        return false if _.size(g) == 0
+        for k,v of g
+            return false if v.length == 0
+        visited = []
+        check = [first _.keys(g)]
+        while check.length
+            k = check.shift()
+            visited.push k if visited.indexOf(k) < 0
+            for n in g[k]
+                if visited.indexOf(n) < 0 and check.indexOf(n) < 0
+                    check.push n
+        log 'visited', visited
+        return visited.length == _.size g
+
+    objectMoved: (object) ->
+        @updateGraph()
         @updatePivots()
+        if @randCount
+            @randomize()
 
     neighboring: (p1, p2) ->
         l = p1.minus(p2).length()
@@ -297,7 +358,6 @@ class World extends Actor
         for o in @objects
             if name == o.name
                 return o
-        log "World.objectWithName [WARNING] no object with name #{name}"
         null
         
     #  0000000  000000000  00000000  00000000       

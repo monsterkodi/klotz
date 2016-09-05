@@ -27,7 +27,6 @@ class Camera extends THREE.PerspectiveCamera
 
         @elem.addEventListener 'mousewheel', @onMouseWheel
         @elem.addEventListener 'mousedown',  @onMouseDown
-        @elem.addEventListener 'mouseup',    @onMouseUp
         @elem.addEventListener 'keypress',   @onKeyPress
         @elem.addEventListener 'keyrelease', @onKeyRelease
         
@@ -42,21 +41,23 @@ class Camera extends THREE.PerspectiveCamera
     getUp:        -> new Quaternion(@quaternion).rotate Vector.unitY
 
     del: =>
-        @elem.removeEventListener 'keypress',   @onKeyPress
-        @elem.removeEventListener 'keyrelease', @onKeyRelease
-        @elem.removeEventListener 'mousewheel', @onMouseWheel
-        @elem.removeEventListener 'mousedown',  @onMouseDown
-        @elem.removeEventListener 'mouseup',    @onMouseUp
+        @elem.removeEventListener  'keypress',   @onKeyPress
+        @elem.removeEventListener  'keyrelease', @onKeyRelease
+        @elem.removeEventListener  'mousewheel', @onMouseWheel
+        @elem.removeEventListener  'mousedown',  @onMouseDown
+        window.removeEventListener 'mouseup',    @onMouseUp
         window.removeEventListener 'mousemove',  @onMouseDrag 
 
     onMouseDown: (event) => 
         @mouseX = event.clientX
         @mouseY = event.clientY
         window.addEventListener    'mousemove',  @onMouseDrag
+        window.addEventListener    'mouseup',    @onMouseUp
         @isPivoting = true
         
     onMouseUp: (event) => 
         window.removeEventListener 'mousemove',  @onMouseDrag
+        window.removeEventListener 'mouseup',    @onMouseUp
         @isPivoting = false  
         
     onMouseDrag:  (event) =>  

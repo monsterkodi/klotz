@@ -23,22 +23,24 @@ module.exports =
             color:    rgb 0.0, 0.5, 1
             specular: rgb 0.0, 0, 0.5
         plane:
-            color:  rgb 0.025, 0.025, 0.025
+            color:    rgb 0.025, 0.025, 0.025
         pivot:
-            color:  rgb 0.1, 0.1, 0.1
+            color:    rgb 0.1, 0.1, 0.1
         block1:            
-            color:    rgb 1,0,0
-            specular: rgb 0.2, 0.2, 0
+            color:    rgb 0.1,0.1,0.1
+            specular: rgb 0.1,0.1,0.1
         block2:            
-            color:  rgb 0,0,1
+            color:    rgb 0,0,1
             specular: rgb 0.1, 0.1, 0.3
         block3:            
-            color:  rgb 0,0.5,0
+            color:    rgb 1, 0.8, 0
+            specular: rgb 0.1, 0.1, 0
         block4:            
-            color:  rgb 1,0,1
+            color:    rgb 1,0,0
+            specular: rgb 0.2, 0.2, 0
         block5:            
-            color:  rgb 1,1,0
+            color:    rgb 1,1,0
         block6:            
-            color:  rgb 1,1,1
+            color:    rgb 1,1,1
     
                              

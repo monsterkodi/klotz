@@ -52,39 +52,50 @@ class Block extends Item
         @pivots = []
         @name = "block_#{Block.id}"
         super
-        @addAction new Action @, Action.ROLL, "roll_#{@name}", 200 
+        @addAction new Action @, Action.ROLL, "roll_#{@name}", 50 
+    
+    # 00000000   000  000   000   0000000   000000000   0000000
+    # 000   000  000  000   000  000   000     000     000     
+    # 00000000   000   000 000   000   000     000     0000000 
+    # 000        000     000     000   000     000          000
+    # 000        000      0       0000000      000     0000000 
     
     delPivots: ->
-        @pivots = []
         while @mesh.children.length > 30
             @mesh.remove @mesh.children.pop()
       
     updatePivots: ->
-        
+        @pivots = []
         @delPivots()
+        
+        return if not world.mightMove @
          
         for dir,perps of Block.dirs
             if @neighborAtPos @position.plus @orientation.rotate Block.norm[dir]
                 for side in perps
                     if @isFree side 
                         @pivots.push "#{side} #{dir}"
-            for side in perps
-                p = @position.clone()
-                p.add @orientation.rotate Block.norm[dir]
-                p.add @orientation.rotate Block.norm[side]
-                if @neighborAtPos p
-                    if @isFree side 
-                        @pivots.push "#{side} #{dir}"
+            # for side in perps
+                # p = @position.clone()
+                # p.add @orientation.rotate Block.norm[dir]
+                # p.add @orientation.rotate Block.norm[side]
+                # if @neighborAtPos p
+                    # if @isFree side 
+                        # @pivots.push "#{side} #{dir}"
                     
         for p in @pivots 
-            geom = new THREE.SphereBufferGeometry 0.1
-            torus = new THREE.Mesh geom, Material.pivot
+            geom = new THREE.SphereBufferGeometry 0.1, 16, 16
+            color = @color[p.split(' ')[1]]
+            mat = Material["block#{color+1}"]
+            torus = new THREE.Mesh geom, mat
             torus.name = p
-            torus.position.add Block.norm[p.split(' ')[0]].mul 0.5
-            torus.position.add Block.norm[p.split(' ')[1]].mul 0.5
+            torus.position.add Block.norm[p.split(' ')[0]].mul 0.4
+            torus.position.add Block.norm[p.split(' ')[1]].mul 0.4
             @mesh.add torus
     
     neighborAtPos: (p) -> world.blockAtPos p
+    distance: (o) -> @position.minus(o.position).length()
+    isNeighbor: (o) -> Math.abs(@distance(o)-1) < 0.1
     
     isFree: (side) -> not @neighborAtPos @position.plus @orientation.rotate Block.norm[side]
         
@@ -105,7 +116,6 @@ class Block extends Item
         if split.length > 1
             pivot = "#{split[0]} #{split[1]}" 
             if pivot in @pivots
-                # @pushSide = "#{Block.neg[split[0]]} #{Block.neg[split[1]]}"
                 @rotateAround pivot
                 return pivot
             pivot = "#{Block.neg[split[0]]} #{Block.neg[split[1]]}"
@@ -121,21 +131,24 @@ class Block extends Item
         
     rotateAround: (pivot) ->
         [frst, scnd] = pivot.split ' '
-        # log "rotateAround: '#{pivot}'"
         @rotPivot  = pivot
         @rotCenter = Block.norm[frst].div(2).plus Block.norm[scnd].div(2)
         @rotAxis   = Block.norm[frst].cross Block.norm[scnd]
         @rotAxis   = @orientation.rotate(Block.norm[frst]).cross @orientation.rotate(Block.norm[scnd])
-        world.addAction @actionWithId Action.ROLL
-        
+        below = @position.plus @orientation.rotate(Block.norm[frst]).plus @orientation.rotate(Block.norm[scnd])
+        @rotAngle  = world.blockAtPos(below) and 90 or 180
+        world.delPivots()
+        action = @actionWithId Action.ROLL
+        world.addAction action
+    
     performAction: (action) -> 
         switch action.id
             when Action.ROLL
-                rot = Quaternion.rotationAroundVector(action.relTime()*90, @rotAxis)
+                rot = Quaternion.rotationAroundVector(action.relTime()*@rotAngle, @rotAxis)
                 ctr = @orientation.rotate @rotCenter
                 newPos = @position.plus(ctr).minus(rot.rotate ctr)
                 @setCurrentPosition newPos
-                rot = Quaternion.rotationAroundVector(action.relTime()*90, @rotAxis)
+                rot = Quaternion.rotationAroundVector(action.relTime()*@rotAngle, @rotAxis)
                 @setCurrentOrientation rot.mul @orientation
                 world.centerCamera()
        
@@ -145,44 +158,45 @@ class Block extends Item
                 oldPos = @position
                 @setPosition    @currentPosition()
                 @setOrientation @currentOrientation()
-                world.objectMoved @, oldPos, @position
+                world.updatePivots()
+                world.delPivots()
     
     actionFinished: (action) ->
         switch action.id
             when Action.ROLL
                 if not @isBonding()
-                    log "not bonding #{@pushSide}"
                     side = @pushSide
                     p = @push side
-                    log "not bonding #{@pushSide} #{p?}" 
                     if not p?
                         split = side.split ' '
                         p = @push "#{Block.neg[split[0]]} #{Block.neg[split[1]]}"
-                        log 'no push?' if not p?
+                        log 'block.actionFinished no push?' if not p?
                 else
-                    world.centerCamera()
+                    world.objectMoved @
     
     isBonding: ->
+        hasNeighbor = false
         for dir,norm of Block.norm
             neighbor = @neighborAtPos @position.plus norm
-            return true if @isBondingWith neighbor
+            return false if not @isBondingWith neighbor
+            hasNeighbor = true if neighbor?
+        return hasNeighbor
 
     isBondingWith: (n) ->
-        return false if not n?
+        return true if not n?
         ndir = @dirForPos n.position
         mdir = n.dirForPos @position
-        # log "isBondingWith #{@name} #{n.name}", @color[ndir], n.color[mdir]
         return @color[ndir] == n.color[mdir]
     
     createMesh: ->
         @mesh = new THREE.Object3D
         @mesh.name = @name
         
-        @mesh.add @createSide @color.front,   0, 0,      "front"
-        @mesh.add @createEdge @color.front,   0, 0, 0,   "top front"
-        @mesh.add @createEdge @color.front,   0, 0, 180, "bot front"
-        @mesh.add @createEdge @color.front,   0, 0, 90,  "left front"
-        @mesh.add @createEdge @color.front,   0, 0, -90, "right front"
+        @mesh.add @createSide @color.front,  0, 0,      "front"
+        @mesh.add @createEdge @color.front,  0, 0, 0,   "top front"
+        @mesh.add @createEdge @color.front,  0, 0, 180, "bot front"
+        @mesh.add @createEdge @color.front,  0, 0, 90,  "left front"
+        @mesh.add @createEdge @color.front,  0, 0, -90, "right front"
                               
         @mesh.add @createSide @color.back, 180, 0,      "back"
         @mesh.add @createEdge @color.back, 180, 0, 0,   "bot back"
@@ -190,23 +204,23 @@ class Block extends Item
         @mesh.add @createEdge @color.back, 180, 0, 90,  "left back"
         @mesh.add @createEdge @color.back, 180, 0, -90, "right back"
                               
-        @mesh.add @createSide @color.bot,  90, 0,      "bot"
-        @mesh.add @createEdge @color.bot,  90, 0, 0,   "front bot"
-        @mesh.add @createEdge @color.bot,  90, 0, 180, "back bot"
-        @mesh.add @createEdge @color.bot,  90, 0, -90, "right bot"
-        @mesh.add @createEdge @color.bot,  90, 0, 90,  "left bot"
+        @mesh.add @createSide @color.bot,   90, 0,      "bot"
+        @mesh.add @createEdge @color.bot,   90, 0, 0,   "front bot"
+        @mesh.add @createEdge @color.bot,   90, 0, 180, "back bot"
+        @mesh.add @createEdge @color.bot,   90, 0, -90, "right bot"
+        @mesh.add @createEdge @color.bot,   90, 0, 90,  "left bot"
                               
-        @mesh.add @createSide @color.top, -90, 0,      "top"
-        @mesh.add @createEdge @color.top, -90, 0, 0,   "back top"
-        @mesh.add @createEdge @color.top, -90, 0, 180, "front top"
-        @mesh.add @createEdge @color.top, -90, 0, 90,  "left top"
-        @mesh.add @createEdge @color.top, -90, 0, -90, "right top"
+        @mesh.add @createSide @color.top,  -90, 0,      "top"
+        @mesh.add @createEdge @color.top,  -90, 0, 0,   "back top"
+        @mesh.add @createEdge @color.top,  -90, 0, 180, "front top"
+        @mesh.add @createEdge @color.top,  -90, 0, 90,  "left top"
+        @mesh.add @createEdge @color.top,  -90, 0, -90, "right top"
                               
-        @mesh.add @createSide @color.right,  0, 90,      "right"
-        @mesh.add @createEdge @color.right,  0, 90, 0,   "top right"
-        @mesh.add @createEdge @color.right,  0, 90, 180, "bot right"
-        @mesh.add @createEdge @color.right,  0, 90, 90,  "front right"
-        @mesh.add @createEdge @color.right,  0, 90, -90, "back right"        
+        @mesh.add @createSide @color.right, 0, 90,      "right"
+        @mesh.add @createEdge @color.right, 0, 90, 0,   "top right"
+        @mesh.add @createEdge @color.right, 0, 90, 180, "bot right"
+        @mesh.add @createEdge @color.right, 0, 90, 90,  "front right"
+        @mesh.add @createEdge @color.right, 0, 90, -90, "back right"        
                               
         @mesh.add @createSide @color.left,  0,-90,      "left"
         @mesh.add @createEdge @color.left,  0,-90, 0,   "top left"
