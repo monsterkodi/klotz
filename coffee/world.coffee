@@ -39,6 +39,9 @@ class World extends Actor
         @rasterSize = 0.05
         
         super
+        
+        global.world = @
+        
         @startTimer()
         
         @screenSize = new Size @view.clientWidth, @view.clientHeight
@@ -58,6 +61,11 @@ class World extends Actor
         #   0000000    0000000  00000000  000   000  00000000
         
         @scene = new THREE.Scene()
+
+        @camera = new Camera 
+            view:   @view
+            aspect: @view.offsetWidth / @view.offsetHeight
+
         
         #   000      000   0000000   000   000  000000000
         #   000      000  000        000   000     000   
@@ -65,13 +73,32 @@ class World extends Actor
         #   000      000  000   000  000   000     000   
         #   0000000  000   0000000   000   000     000   
 
-        @camera = new Camera aspect:@view.offsetWidth / @view.offsetHeight
+        # @ambient = new THREE.AmbientLight 0x222222
+        # @scene.add @ambient
         
         @sun = new THREE.PointLight 0xffffff
+        # @sun.castShadow = true
+        # @sun.shadow.darkness = 0.5
+        # @sun.shadow.mapSize = new THREE.Vector2 2048, 2048
+        # @sun.shadow.bias = 0.01
         @scene.add @sun
+
+        @sun2 = new THREE.PointLight 0xffffff
+        @sun2.castShadow = true
+        @sun2.shadow.darkness = 0.25
+        @sun2.shadow.mapSize = new THREE.Vector2 2048, 2048
+        @sun2.shadow.bias = 0.01
+        @scene.add @sun2
         
-        @ambient = new THREE.AmbientLight 0x222222
-        @scene.add @ambient
+        @renderer.shadowMap.enabled = true
+        
+        # geom = new THREE.PlaneGeometry 100, 100, 100, 100
+        # geom.rotateX deg2rad -90
+        geom = new THREE.SphereGeometry @camera.far/2, 32, 32
+        geom.translate 0,@camera.far/4,@camera.far/4
+        @plane = new THREE.Mesh geom, Material.plane
+        @plane.receiveShadow = true
+        @scene.add @plane
         
         @objects = []
         @lights  = []
@@ -107,7 +134,6 @@ class World extends Actor
         return if world?
         @initGlobal()
         world = new World view
-        global.world = world
         world.create()
         world
         
@@ -139,7 +165,6 @@ class World extends Actor
         @addObjectAtPos block, 1,1,0
         
         @applyScheme @dict.scheme ? 'default'
-        
         @centerCamera()
         
     centerCamera: ->
@@ -180,25 +205,6 @@ class World extends Actor
             mat.specular = v.specular if v.specular?
             if shininess[k]?
                 mat.shininess = v.shininess ? shininess[k]
-
-    #  000      000   0000000   000   000  000000000
-    #  000      000  000        000   000     000   
-    #  000      000  000  0000  000000000     000   
-    #  000      000  000   000  000   000     000   
-    #  0000000  000   0000000   000   000     000   
-    
-    addLight: (light) ->
-        @lights.push light
-        @enableShadows true if light.shadow
-        
-    removeLight: (light) ->
-        _.pull @lights, light
-        for l in @lights
-            shadow = true if l.shadow
-        @enableShadows shadow
-
-    enableShadows: (enable) ->
-        @renderer.shadowMap.enabled = enable
     
     #    0000000    0000000  000000000  000   0000000   000   000
     #   000   000  000          000     000  000   000  0000  000
@@ -307,6 +313,10 @@ class World extends Actor
         Sound.setPosDirUp @camera.getPosition(), @camera.getDirection(), @camera.getUp()
             
         @sun.position.copy @camera.position
+        @sun2.position.copy @camera.getUp().mul(4).minus(@camera.getDirection().mul(4))
+        
+        @plane.quaternion.copy @camera.quaternion
+        
         @renderer.autoClearColor = false
         @renderer.render @scene, @camera
         @renderer.render @text.scene, @text.camera if @text

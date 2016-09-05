@@ -13,29 +13,28 @@ Quaternion  = require './lib/quaternion'
 class Camera extends THREE.PerspectiveCamera
 
     constructor: (opt) ->
-        @fov    = opt?.fov    ? 60
-        @near   = opt?.near   ? 0.01
-        @far    = opt?.far    ? 30
-        @aspect = opt?.aspect ? 1
-        @dist   = opt?.dist or 3
-        @maxDist = opt?.maxDist or @far/2
-        @minDist = opt?.minDist or 2
+        @elem    = opt.view
+        @fov     = opt.fov    ? 60
+        @near    = opt.near   ? 0.01
+        @far     = opt.far    ? 30
+        @aspect  = opt.aspect ? 1
+        @dist    = opt.dist or 3
+        @maxDist = opt.maxDist or @far/2
+        @minDist = opt.minDist or 2
         @center  = new Vector 0.5, 0.5, 0.5
         
         super @fov, @aspect, @near, @far
 
-        window.addEventListener 'mousewheel', @onMouseWheel
-        window.addEventListener 'mousedown',  @onMouseDown
-        window.addEventListener 'mousemove',  @onMouseDrag
-        window.addEventListener 'mouseup',    @onMouseUp
-        window.addEventListener 'keypress',   @onKeyPress
-        window.addEventListener 'keyrelease', @onKeyRelease
+        @elem.addEventListener 'mousewheel', @onMouseWheel
+        @elem.addEventListener 'mousedown',  @onMouseDown
+        @elem.addEventListener 'mouseup',    @onMouseUp
+        @elem.addEventListener 'keypress',   @onKeyPress
+        @elem.addEventListener 'keyrelease', @onKeyRelease
         
         @position.set 0, 0, @dist
 
     reset: ->
         @lookAt 0,0,0
-        # @position.set 0, 0, @dist
         @quaternion.copy Quaternion.ZupY
 
     getPosition:  -> new Vector @position
@@ -43,24 +42,21 @@ class Camera extends THREE.PerspectiveCamera
     getUp:        -> new Quaternion(@quaternion).rotate Vector.unitY
 
     del: =>
-        window.removeEventListener 'mousewheel', @onMouseWheel
-        window.removeEventListener 'mousedown',  @onMouseDown
+        @elem.removeEventListener 'keypress',   @onKeyPress
+        @elem.removeEventListener 'keyrelease', @onKeyRelease
+        @elem.removeEventListener 'mousewheel', @onMouseWheel
+        @elem.removeEventListener 'mousedown',  @onMouseDown
+        @elem.removeEventListener 'mouseup',    @onMouseUp
         window.removeEventListener 'mousemove',  @onMouseDrag 
-        window.removeEventListener 'mousemove',  @onMouseMove        
-        window.removeEventListener 'mouseup',    @onMouseUp
-        window.removeEventListener 'keypress',   @onKeyPress
-        window.removeEventListener 'keyrelease', @onKeyRelease
 
     onMouseDown: (event) => 
         @mouseX = event.clientX
         @mouseY = event.clientY
         window.addEventListener    'mousemove',  @onMouseDrag
-        window.removeEventListener 'mousemove',  @onMouseMove
         @isPivoting = true
         
     onMouseUp: (event) => 
         window.removeEventListener 'mousemove',  @onMouseDrag
-        window.addEventListener    'mousemove',  @onMouseMove
         @isPivoting = false  
         
     onMouseDrag:  (event) =>  

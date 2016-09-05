@@ -17,6 +17,11 @@ module.exports =
         shading:        THREE.SmoothShading
         transparent:    true
 
+    plane: new THREE.MeshPhongMaterial 
+        side:           THREE.DoubleSide
+        shading:        THREE.SmoothShading
+        shininess: 0
+
     pivot: new THREE.MeshPhongMaterial 
         side:           THREE.FrontSide
         shading:        THREE.SmoothShading

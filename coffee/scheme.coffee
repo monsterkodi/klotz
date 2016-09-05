@@ -22,6 +22,8 @@ module.exports =
         text:             
             color:    rgb 0.0, 0.5, 1
             specular: rgb 0.0, 0, 0.5
+        plane:
+            color:  rgb 0.025, 0.025, 0.025
         pivot:
             color:  rgb 0.1, 0.1, 0.1
         block1:            

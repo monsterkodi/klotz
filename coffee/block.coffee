@@ -199,6 +199,7 @@ class Block extends Item
 
         mesh = new THREE.Mesh geom, mat
         mesh.receiveShadow = true
+        mesh.castShadow = true
         mesh.rotation.copy new THREE.Euler deg2rad(xr), deg2rad(yr), 0
         mesh.name = name
         mesh
@@ -213,6 +214,7 @@ class Block extends Item
 #              
         mesh = new THREE.Mesh geom, mat
         mesh.receiveShadow = true
+        mesh.castShadow = true
         mesh.rotation.copy new THREE.Euler deg2rad(xr), deg2rad(yr), deg2rad(zr)
         mesh.name = name
         mesh
