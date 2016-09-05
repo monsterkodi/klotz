@@ -4,6 +4,7 @@
 # 000   000  000      000   000  000       000  000 
 # 0000000    0000000   0000000    0000000  000   000
 {
+def,
 last,
 deg2rad
 }          = require './lib/tools'
@@ -38,7 +39,15 @@ class Block extends Item
         top:   'bot'
         bot:   'top'
     
-    constructor: () ->
+    constructor: (colors) ->
+        @color = def colors,
+            front: 0
+            back:  0
+            left:  0
+            right: 0
+            top:   0
+            bot:   0
+            
         Block.id += 1
         @pivots = []
         @name = "block_#{Block.id}"
@@ -55,9 +64,7 @@ class Block extends Item
         @delPivots()
          
         for dir,perps of Block.dirs
-            # log "dir #{dir} perps:", perps
             if @neighborAtPos @position.plus @orientation.rotate Block.norm[dir]
-                log 'got n in dir', dir
                 for side in perps
                     if @isFree side 
                         @pivots.push "#{side} #{dir}"
@@ -87,22 +94,28 @@ class Block extends Item
             if n.dot(p.minus(@position)) > 0.9
                 return k
     
-    push: (sideName) ->
-        split = sideName.split ' '
+    # 00000000   000   000   0000000  000   000
+    # 000   000  000   000  000       000   000
+    # 00000000   000   000  0000000   000000000
+    # 000        000   000       000  000   000
+    # 000         0000000   0000000   000   000
+    
+    push: (@pushSide) ->
+        split = @pushSide.split ' '
         if split.length > 1
             pivot = "#{split[0]} #{split[1]}" 
             if pivot in @pivots
+                # @pushSide = "#{Block.neg[split[0]]} #{Block.neg[split[1]]}"
                 @rotateAround pivot
-                return
-            pivot = "#{Block.neg[split[0]]} #{Block.neg[split[1]]}" 
+                return pivot
+            pivot = "#{Block.neg[split[0]]} #{Block.neg[split[1]]}"
             if pivot in @pivots
                 @rotateAround pivot
-                return
+                return pivot
             pivot = "#{split[1]} #{Block.neg[split[0]]}" 
             if pivot in @pivots
                 @rotateAround pivot
-                return
-            # log "sideName #{sideName}", @pivots
+                return pivot
         else 
             log "----- '#{split[0]}'", @pivots
         
@@ -138,65 +151,77 @@ class Block extends Item
         switch action.id
             when Action.ROLL
                 if not @isBonding()
-                    @rotateAround @rotPivot
+                    log "not bonding #{@pushSide}"
+                    side = @pushSide
+                    p = @push side
+                    log "not bonding #{@pushSide} #{p?}" 
+                    if not p?
+                        split = side.split ' '
+                        p = @push "#{Block.neg[split[0]]} #{Block.neg[split[1]]}"
+                        log 'no push?' if not p?
                 else
                     world.centerCamera()
     
     isBonding: ->
         for dir,norm of Block.norm
             neighbor = @neighborAtPos @position.plus norm
-            return true if neighbor? and @isBondingWith neighbor
+            return true if @isBondingWith neighbor
 
-    isBondingWith: ->
-        return true
+    isBondingWith: (n) ->
+        return false if not n?
+        ndir = @dirForPos n.position
+        mdir = n.dirForPos @position
+        # log "isBondingWith #{@name} #{n.name}", @color[ndir], n.color[mdir]
+        return @color[ndir] == n.color[mdir]
     
     createMesh: ->
         @mesh = new THREE.Object3D
         @mesh.name = @name
         
-        @mesh.add @createSide Material.block1,   0, 0,      "front"
-        @mesh.add @createEdge Material.block1,   0, 0, 0,   "top front"
-        @mesh.add @createEdge Material.block1,   0, 0, 180, "bot front"
-        @mesh.add @createEdge Material.block1,   0, 0, 90,  "left front"
-        @mesh.add @createEdge Material.block1,   0, 0, -90, "right front"
-        
-        @mesh.add @createSide Material.block2, 180, 0,      "back"
-        @mesh.add @createEdge Material.block2, 180, 0, 0,   "bot back"
-        @mesh.add @createEdge Material.block2, 180, 0, 180, "top back"
-        @mesh.add @createEdge Material.block2, 180, 0, 90,  "left back"
-        @mesh.add @createEdge Material.block2, 180, 0, -90, "right back"
-        
-        @mesh.add @createSide Material.block3,  90, 0,      "bot"
-        @mesh.add @createEdge Material.block3,  90, 0, 0,   "front bot"
-        @mesh.add @createEdge Material.block3,  90, 0, 180, "back bot"
-        @mesh.add @createEdge Material.block3,  90, 0, -90, "right bot"
-        @mesh.add @createEdge Material.block3,  90, 0, 90,  "left bot"
-        
-        @mesh.add @createSide Material.block4, -90, 0,      "top"
-        @mesh.add @createEdge Material.block4, -90, 0, 0,   "back top"
-        @mesh.add @createEdge Material.block4, -90, 0, 180, "front top"
-        @mesh.add @createEdge Material.block4, -90, 0, 90,  "left top"
-        @mesh.add @createEdge Material.block4, -90, 0, -90, "right top"
+        @mesh.add @createSide @color.front,   0, 0,      "front"
+        @mesh.add @createEdge @color.front,   0, 0, 0,   "top front"
+        @mesh.add @createEdge @color.front,   0, 0, 180, "bot front"
+        @mesh.add @createEdge @color.front,   0, 0, 90,  "left front"
+        @mesh.add @createEdge @color.front,   0, 0, -90, "right front"
+                              
+        @mesh.add @createSide @color.back, 180, 0,      "back"
+        @mesh.add @createEdge @color.back, 180, 0, 0,   "bot back"
+        @mesh.add @createEdge @color.back, 180, 0, 180, "top back"
+        @mesh.add @createEdge @color.back, 180, 0, 90,  "left back"
+        @mesh.add @createEdge @color.back, 180, 0, -90, "right back"
+                              
+        @mesh.add @createSide @color.bot,  90, 0,      "bot"
+        @mesh.add @createEdge @color.bot,  90, 0, 0,   "front bot"
+        @mesh.add @createEdge @color.bot,  90, 0, 180, "back bot"
+        @mesh.add @createEdge @color.bot,  90, 0, -90, "right bot"
+        @mesh.add @createEdge @color.bot,  90, 0, 90,  "left bot"
+                              
+        @mesh.add @createSide @color.top, -90, 0,      "top"
+        @mesh.add @createEdge @color.top, -90, 0, 0,   "back top"
+        @mesh.add @createEdge @color.top, -90, 0, 180, "front top"
+        @mesh.add @createEdge @color.top, -90, 0, 90,  "left top"
+        @mesh.add @createEdge @color.top, -90, 0, -90, "right top"
+                              
+        @mesh.add @createSide @color.right,  0, 90,      "right"
+        @mesh.add @createEdge @color.right,  0, 90, 0,   "top right"
+        @mesh.add @createEdge @color.right,  0, 90, 180, "bot right"
+        @mesh.add @createEdge @color.right,  0, 90, 90,  "front right"
+        @mesh.add @createEdge @color.right,  0, 90, -90, "back right"        
+                              
+        @mesh.add @createSide @color.left,  0,-90,      "left"
+        @mesh.add @createEdge @color.left,  0,-90, 0,   "top left"
+        @mesh.add @createEdge @color.left,  0,-90, 180, "bot left"
+        @mesh.add @createEdge @color.left,  0,-90, 90,  "back left"
+        @mesh.add @createEdge @color.left,  0,-90, -90, "front left"
 
-        @mesh.add @createSide Material.block5,  0, 90,      "right"
-        @mesh.add @createEdge Material.block5,  0, 90, 0,   "top right"
-        @mesh.add @createEdge Material.block5,  0, 90, 180, "bot right"
-        @mesh.add @createEdge Material.block5,  0, 90, 90,  "front right"
-        @mesh.add @createEdge Material.block5,  0, 90, -90, "back right"        
-        
-        @mesh.add @createSide Material.block6,  0,-90,      "left"
-        @mesh.add @createEdge Material.block6,  0,-90, 0,   "top left"
-        @mesh.add @createEdge Material.block6,  0,-90, 180, "bot left"
-        @mesh.add @createEdge Material.block6,  0,-90, 90,  "back left"
-        @mesh.add @createEdge Material.block6,  0,-90, -90, "front left"
-
-    createSide: (mat, xr, yr, name) ->
+    createSide: (color, xr, yr, name) ->
 
         k = 0.25
         l = 0.4
          
         geom = @quadGeom -k, -k, l, k, k, l, -k,  k, l, k, k, l, -k, -k, l, k, -k, l
 
+        mat = Material["block#{color+1}"]
         mesh = new THREE.Mesh geom, mat
         mesh.receiveShadow = true
         mesh.castShadow = true
@@ -204,7 +229,7 @@ class Block extends Item
         mesh.name = name
         mesh
 
-    createEdge: (mat, xr, yr, zr, name) ->
+    createEdge: (color, xr, yr, zr, name) ->
 
         k = 0.25
         l = 0.4
@@ -212,6 +237,7 @@ class Block extends Item
          #              
         geom = @quadGeom -m,  m, m, m, m, m, k, l, k, -k, l, k, -m, m, m, k, l, k
 #              
+        mat = Material["block#{color+1}"]
         mesh = new THREE.Mesh geom, mat
         mesh.receiveShadow = true
         mesh.castShadow = true

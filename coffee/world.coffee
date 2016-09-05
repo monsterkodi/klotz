@@ -152,7 +152,10 @@ class World extends Actor
     create: (@dict={}) -> 
         @deleteAllObjects()
         @camera.reset()
-        block = new Block
+        block = new Block 
+            front: 0
+            left:  1
+            right: 1
         # block.setOrientation Quaternion.ZupY
         @addObjectAtPos block, 0,0,0
         block = new Block
@@ -238,7 +241,7 @@ class World extends Actor
             o.updatePivots()
 
     objectMoved: (object, oldPos, newPos) ->
-        log "#{object.name}", new Pos(oldPos), new Pos(newPos)
+        # log "world.objectMoved #{object.name}", new Pos(oldPos), new Pos(newPos)
         @updatePivots()
 
     neighboring: (p1, p2) ->
