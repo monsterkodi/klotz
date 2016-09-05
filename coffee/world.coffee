@@ -153,9 +153,9 @@ class World extends Actor
         @deleteAllObjects()
         @camera.reset()
         block = new Block 
-            front: 0
+            front: 1
             left:  1
-            right: 1
+            top:   1
         # block.setOrientation Quaternion.ZupY
         @addObjectAtPos block, 0,0,0
         block = new Block
@@ -193,19 +193,18 @@ class World extends Actor
             text:    30
             menu:    30
             plate:   10
-            raster:  20
-            wall:    20
-            block1:  10
-            block2:  10
-            block3:  10
-            block4:  10
-            block5:  10
-            block6:  10
+            block1:  20
+            block2:  20
+            block3:  20
+            block4:  20
+            block5:  20
+            block6:  20
             
         for k,v of colors
             mat = Material[k]
             mat.color    = v.color
-            mat.specular = v.specular if v.specular?
+            # mat.specular = v.specular if v.specular?
+            mat.specular = v.specular ? new THREE.Color(v.color).multiplyScalar 0.2
             if shininess[k]?
                 mat.shininess = v.shininess ? shininess[k]
     
@@ -316,7 +315,7 @@ class World extends Actor
         Sound.setPosDirUp @camera.getPosition(), @camera.getDirection(), @camera.getUp()
             
         @sun.position.copy @camera.position
-        @sun2.position.copy @camera.getUp().mul(4).minus(@camera.getDirection().mul(4))
+        @sun2.position.copy new Vector(@camera.position).plus @camera.getUp().mul(8).plus(@camera.getDirection().mul(2))
         
         @plane.quaternion.copy @camera.quaternion
         

@@ -27,9 +27,11 @@ module.exports =
         pivot:
             color:  rgb 0.1, 0.1, 0.1
         block1:            
-            color:  rgb 1,0,0
+            color:    rgb 1,0,0
+            specular: rgb 0.2, 0.2, 0
         block2:            
             color:  rgb 0,0,1
+            specular: rgb 0.1, 0.1, 0.3
         block3:            
             color:  rgb 0,0.5,0
         block4:            
